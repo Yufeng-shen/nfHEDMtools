@@ -2,57 +2,76 @@
 import numpy as np
 import os
 from IntBin import ReadI9BinaryFiles
-#number of frames that contains peaks
-n=10
-#experiment data, a length n list, each element is a x*3 array, x is the number of hitted pixels
-expdata=[]
-#simulated pattern
-simdata=[]
 
-#it's important to replace the hard coded value with the parameters used in simulation,
-#like the L=5.5,J=1024,K=2000
+def readdata(reduceddir,simdir,detN1=0,detN2=0):
+    """
+    Read the reduced images and the simulated images.
 
-def readdata2():
-    lexp=os.listdir('/work/yufengs/David/ReducedDavid/')
-    lsim=os.listdir('/work/yufengs/David/Sim/')
+    Parameters
+    -----------
+    reduceddir: string
+                Directory of reduced experimental images, which are outputs from 'ParallelReduction'.
+    simdir:     string
+                Directory of simulated images, which are outputs from 'IceNine' simulation mode.
+    detN1,detN2:int
+                index of detector, usually 0 or 1 or 2 or 3. detN1 is for the reduceddir, detN2 is for the simdir
+
+    Returns
+    ----------
+    mysimdata:  dictionary
+                Keys are the frame indices, values are tuple of pixel positions and frame index. The pixels positions are
+                saved as n*m ndarry where n is the number of pixels, first two columns are the x, y coordinates.
+    myexpdata:  dictionary
+                Keys are the frame indices, values are tuple of pixel positions and frame index. The pixels positions are
+                saved as n*m ndarry where n is the number of pixels, first two columns are the x, y coordinates, the fourth
+                column is the peakID.
+
+    """
+    lexp=os.listdir(reduceddir)
+    lsim=os.listdir(simdir)
     mysimdata={}
     myexpdata={}
     for fn in lsim:
-        if fn[-1]=='0':
-            tmp=np.loadtxt('/work/yufengs/David/Sim/'+fn,delimiter=',')
+        if fn[-1]==str(detN2):
+            tmp=np.loadtxt(simdir+fn,delimiter=',')
             if len(tmp)>0:
                 idx=int(fn[-10:-5])
                 mysimdata[idx]=(tmp,idx)
     for fn in lexp:
-        if fn[-1]=='1':
-            tmp=np.array(ReadI9BinaryFiles('/work/yufengs/David/ReducedDavid/'+fn))
+        if fn[-1]==str(detN1):
+            tmp=np.array(ReadI9BinaryFiles(reduceddir+fn))
             if len(tmp[0])>0:
                 idx=int(fn[-10:-5])
                 myexpdata[idx]=(tmp.T,idx)
     return mysimdata,myexpdata
 
-def readdata():
-    lsim=os.listdir('SillySim2/')
-    mysimdata={}
-    myexpdata={}
-    for fn in lsim:
-        if fn[-1]=='0':
-            tmp=np.loadtxt('SillySim2/'+fn,delimiter=',')
-            if len(tmp)>0:
-                idx=int(fn[-10:-5])
-                mysimdata[idx]=(tmp,idx)
-        if fn[-1]=='1':
-            tmp=np.loadtxt('SillySim2/'+fn,delimiter=',')
-            if len(tmp)>0:
-                idx=int(fn[-10:-5])
-                myexpdata[idx]=(tmp,idx)
-    return mysimdata,myexpdata
 
-def myreduce2(simdata,expdata):
+def myreduce(simdata,expdata):
+    """
+    Reduce the images for better optimization speed. Each simulated image choose the first pixel, each reduced image choose
+    the averages of each peak.
+
+    Parameters
+    ----------
+    simdata:  dictionary
+                Keys are the frame indices, values are tuple of pixel positions and frame index. The pixels positions are
+                saved as n*m ndarry where n is the number of pixels, first two columns are the x, y coordinates.
+    expdata:  dictionary
+                Keys are the frame indices, values are tuple of pixel positions and frame index. The pixels positions are
+                saved as n*m ndarry where n is the number of pixels, first two columns are the x, y coordinates, the fourth
+                column is the peakID.
+
+    Returns
+    --------
+    resim:  dictionary
+            Reduced simulated data
+    reexp:  dictionary
+            Reduced experimental data
+    """
     resim={}
     reexp={}
     for i in simdata:
-        resim[i]=(np.mean(simdata[i][0],axis=0).reshape((1,-1)),i)
+        resim[i]=(simdata[i][0][0].reshape((1,-1)),i)
     for i in expdata:
         tmp=expdata[i][0]
 	peakid=tmp[:,3].astype('int')
@@ -61,23 +80,12 @@ def myreduce2(simdata,expdata):
         reexp[i]=(np.array([xmean,ymean]).T.reshape((-1,2)),i)
     return resim,reexp
 
-def myreduce(simdata,expdata):
-    resim={}
-    reexp={}
-    for i in simdata:
-        resim[i]=(simdata[i][0][0].reshape((1,-1)),i)
-    for i in expdata:
-        reexp[i]=(expdata[i][0][0].reshape((1,-1)),i)
-    return resim,reexp
 
 def rot(x,y,theta):
     newx=x*np.cos(theta)-y*np.sin(theta)
     newy=y*np.cos(theta)+x*np.sin(theta)
     return newx,newy
 
-samplex=0.091357/0.00148
-sampley=0.0715625/0.00148
-L=5.49918/0.00148
 
 
 pars={'x':(972.219-989.438),'y':(2000.26-2018.58),'L':7.48317/0.00148}
@@ -90,9 +98,9 @@ def trans(simdata,micx=0.0715625,micy=-0.091357,SimL=5.49918,SimJ=989.438,SimK=2
     simdata: dictionary
             Keys are the frame indices, values are tuple of pixel positions and frame index.
     micx,micy: scalar
-            The simulated voxel position in I9 mic file.
+            The simulated voxel position in I9 mic file. Units are mm.
     SimL,SimJ,SimK: scalar
-            The parameters used by I9 simulation in det file
+            The parameters used by I9 simulation in det file. SimL unit is mm, SimJ and SimK units are number of pixels.
     par: dictionary
             The parameters used for creating new simulation images
 
@@ -117,14 +125,16 @@ def trans(simdata,micx=0.0715625,micy=-0.091357,SimL=5.49918,SimJ=989.438,SimK=2
     return newsimdata
 
 
-
-def kernel2(x0,x1,r=500):
-    return r/float(r+np.sum((x0-x1)**2))
-
 def kernel(x0,x1,r=5000):
+    """
+    Guassian kernel, default bandwidth is sqrt(5000) about 70 pixels.
+    """
     return np.exp(-np.sum((x0-x1)**2)/float(r))
 
 def similarity(exp,sim):
+    """
+    Similarity of two images
+    """
     xyexp=exp[:,:2]
     xysim=sim[:,:2]
     s=0
@@ -134,7 +144,21 @@ def similarity(exp,sim):
     s=s/float(len(xysim)*len(xyexp))
     return s
 
-def Object(x,y,L,simdata,expdata,micx=0.0715625,micy=-0.091357,SimL=5.49918,SimJ=989.438,SimK=2018.58):
+def Objective(x,y,L,simdata,expdata,micx=0.0715625,micy=-0.091357,SimL=5.49918,SimJ=989.438,SimK=2018.58):
+    """
+    Objective function for the optimization
+
+    Parameters
+    ----------
+    x:  scalar
+        True J value minus SimJ, unit is number of pixels
+    y:  scalar
+        True K value minus SimK, unit is number of pixels
+    L:  scalar
+        True L distance, unit is number of pixels
+    Others:
+        See the help information of function trans
+    """
     par={}
     par['x']=x
     par['y']=y
@@ -148,20 +172,4 @@ def Object(x,y,L,simdata,expdata,micx=0.0715625,micy=-0.091357,SimL=5.49918,SimJ
     res=np.mean(score)
     return res
 
-def Statistics(simdata):
-    xysims=[]
-    if type(simdata[0])=='tuple':
-        for i in range(len(simdata)):
-            xysims.append(simdata[i][0][:,:2])
-    else:
-        for i in range(len(simdata)):
-            xysims.append(simdata[i][:,:2])
-    xysims=np.array(xysims)
-#   xysims=xysims.reshape((-1,3))
-    mean=np.mean(xysims,axis=0)
-    var=np.var(xysims,axis=0)
-    return mean,var 
-
-
-#bo=BayesianOptimization(Object,{'x':(-40,40),'y':(-10,10)})
 
