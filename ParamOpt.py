@@ -46,6 +46,88 @@ def readdata(reduceddir,simdir,detN1=0,detN2=0):
     return mysimdata,myexpdata
 
 
+def readdata2(reduceddir,simdir,detN1=0,detN2=0):
+    """
+    Read the reduced images and the simulated images. Deal with reversed omega index.
+
+    Parameters
+    -----------
+    reduceddir: string
+                Directory of reduced experimental images, which are outputs from 'ParallelReduction'.
+    simdir:     string
+                Directory of simulated images, which are outputs from 'IceNine' simulation mode.
+    detN1,detN2:int
+                index of detector, usually 0 or 1 or 2 or 3. detN1 is for the reduceddir, detN2 is for the simdir
+
+    Returns
+    ----------
+    mysimdata:  dictionary
+                Keys are the frame indices, values are tuple of pixel positions and frame index. The pixels positions are
+                saved as n*m ndarry where n is the number of pixels, first two columns are the x, y coordinates.
+    myexpdata:  dictionary
+                Keys are the frame indices, values are tuple of pixel positions and frame index. The pixels positions are
+                saved as n*m ndarry where n is the number of pixels, first two columns are the x, y coordinates, the fourth
+                column is the peakID.
+
+    """
+    lexp=os.listdir(reduceddir)
+    lsim=os.listdir(simdir)
+    mysimdata={}
+    myexpdata={}
+    for fn in lsim:
+        if fn[-1]==str(detN2):
+            tmp=np.loadtxt(simdir+fn,delimiter=',')
+            if len(tmp)>0:
+                idx=179-int(fn[-10:-5])
+                mysimdata[idx]=(tmp,idx)
+    for fn in lexp:
+        if fn[-1]==str(detN1):
+            tmp=np.array(ReadI9BinaryFiles(reduceddir+fn))
+            if len(tmp[0])>0:
+                idx=int(fn[-10:-5])
+                myexpdata[idx]=(tmp.T,idx)
+    return mysimdata,myexpdata
+
+def myreduce2(simdata,expdata,dx=200):
+    """
+    Reduce the images for better optimization speed. Each simulated image choose the first pixel, each reduced image choose
+    the averages of each peak.
+
+    Parameters
+    ----------
+    simdata:  dictionary
+                Keys are the frame indices, values are tuple of pixel positions and frame index. The pixels positions are
+                saved as n*m ndarry where n is the number of pixels, first two columns are the x, y coordinates.
+    expdata:  dictionary
+                Keys are the frame indices, values are tuple of pixel positions and frame index. The pixels positions are
+                saved as n*m ndarry where n is the number of pixels, first two columns are the x, y coordinates, the fourth
+                column is the peakID.
+
+    Returns
+    --------
+    resim:  dictionary
+            Reduced simulated data
+    reexp:  dictionary
+            Reduced experimental data
+    """
+    resim={}
+    reexp={}
+    for i in simdata:
+        resim[i]=(simdata[i][0][0].reshape((1,-1)),i)
+    for i in expdata:
+        if i in simdata:
+            tmp=expdata[i][0]
+            peakid=tmp[:,3].astype('int')
+            weight=np.bincount(peakid)
+            xmean=np.bincount(peakid,weights=tmp[:,0])/weight
+            ymean=np.bincount(peakid,weights=tmp[:,1])/weight
+            ind=(np.absolute(xmean-resim[i][0][0][0])<dx)*(np.absolute(ymean-resim[i][0][0][1])<dx)
+            xmean=xmean[ind]
+            ymean=ymean[ind]
+            weight=weight[ind]
+            reexp[i]=(np.array([xmean,ymean,weight]).T.reshape((-1,3)),i)
+    return resim,reexp
+
 def myreduce(simdata,expdata):
     """
     Reduce the images for better optimization speed. Each simulated image choose the first pixel, each reduced image choose
@@ -125,11 +207,11 @@ def trans(simdata,micx=0.0715625,micy=-0.091357,SimL=5.49918,SimJ=989.438,SimK=2
     return newsimdata
 
 
-def kernel(x0,x1,r=5000):
+def kernel(x0,x1,r=5000,weight=1):
     """
     Guassian kernel, default bandwidth is sqrt(5000) about 70 pixels.
     """
-    return np.exp(-np.sum((x0-x1)**2)/float(r))
+    return np.exp(-np.sum((x0-x1)**2)/float(r))*weight
 
 def similarity(exp,sim):
     """
@@ -141,6 +223,20 @@ def similarity(exp,sim):
     for i in range(len(xysim)):
         for j in range(len(xyexp)):
             s=s+kernel(xyexp[j],xysim[i])
+    s=s/float(len(xysim)*len(xyexp)+0.01)
+    return s
+
+def similarity2(exp,sim):
+    """
+    Similarity of two images
+    """
+    xyexp=exp[:,:2]
+    xysim=sim[:,:2]
+    weight=exp[:,2]
+    s=0
+    for i in range(len(xysim)):
+        for j in range(len(xyexp)):
+            s=s+kernel(xyexp[j],xysim[i],weight[j])
     s=s/float(len(xysim)*len(xyexp))
     return s
 
@@ -172,4 +268,32 @@ def Objective(x,y,L,simdata,expdata,micx=0.0715625,micy=-0.091357,SimL=5.49918,S
     res=np.mean(score)
     return res
 
+
+def Objective2(x,y,L,simdata,expdata,micx=0.0715625,micy=-0.091357,SimL=5.49918,SimJ=989.438,SimK=2018.58):
+    """
+    Objective function for the optimization
+
+    Parameters
+    ----------
+    x:  scalar
+        True J value minus SimJ, unit is number of pixels
+    y:  scalar
+        True K value minus SimK, unit is number of pixels
+    L:  scalar
+        True L distance, unit is number of pixels
+    Others:
+        See the help information of function trans
+    """
+    par={}
+    par['x']=x
+    par['y']=y
+    par['L']=L
+    newsimdata=trans(simdata,micx,micy,SimL,SimJ,SimK,par=par)
+    score=[]
+    for i in newsimdata:
+        if i in expdata:
+            score.append(similarity2(expdata[i][0],newsimdata[i][0]))
+    score=np.array(score)
+    res=np.mean(score)
+    return res
 
