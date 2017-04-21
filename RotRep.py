@@ -310,7 +310,6 @@ def Misorien2FZ2(m1,m2,symtype='Cubic'):
                 w,W=np.linalg.eig(tmp)
                 i=np.where(abs(np.real(w)-1)<1e-8)[0]
                 direction=np.asarray(np.real(W[:,i[-1]])).squeeze()
-                print direction.shape
                 if abs(direction[0])>1e-8:
                     sina=(tmp[2,1]-tmp[1,2])/2.0/direction[0]
                     if sina<0:
