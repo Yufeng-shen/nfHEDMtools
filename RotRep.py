@@ -234,7 +234,7 @@ def Orien2FZ(m,symtype='Cubic'):
 
 def Misorien2FZ1(m1,m2,symtype='Cubic'):
     """
-    Careful, it is m1*op*m2T, the order matters. Only returns the angle, doesn't calculate the right axis direction
+    Careful, it is m1*op*m2T, the misorientation in sample frame, the order matters. Only returns the angle, doesn't calculate the right axis direction
 
     Parameters
     -----------
@@ -275,23 +275,62 @@ def Misorien2FZ1(m1,m2,symtype='Cubic'):
 #    oRes,angle=Orien2FZ(dm,symtype)
 #    return oRes,angle
 #
-#def Misorien2FZ2(m1,m2,symtype='Cubic'):
-#    m2=np.matrix(m2)
-#    dm=m1.dot(m2.T)
-#    ops=GetSymRotMat(symtype)
-#    angle=6.3
-#    for op1 in ops:
-#        for op2 in ops:
-#            tmp=op1.dot(dm.dot(op2))
-#            cosangle=0.5*(tmp.trace()-1)
-#            cosangle=min(0.9999999,cosangle)
-#            cosangle=max(-0.9999999,cosangle)
-#            newangle=np.arccos(cosangle)
-#            if newangle<angle:
-#                angle=newangle
-#                oRes=tmp
-#    return oRes,angle
-#
+def Misorien2FZ2(m1,m2,symtype='Cubic'):
+    """
+    Careful, we need misorientation in crystal frame (eg. m2), it should be o2*m2T*m1*o1, the order matters. Then change m1 and m2 (just do transpose).
+
+    Parameters
+    -----------
+    m1:     ndarray
+            Matrix representation of orientation1
+    m2:     ndarray
+            Matrix representation of orientation2
+    symtype:string
+            The crystal symmetry
+
+    Returns
+    -----------
+    axis:   ndarray
+            The unit vector of rotation direction.
+    angle:  scalar
+            The misorientation angle. (0~180 degree)
+    """
+    m2=np.matrix(m2)
+    dm=(m2.T).dot(m1)
+    ops=GetSymRotMat(symtype)
+    angle=6.3
+    for op1 in ops:
+        for op2 in ops:
+            tmp=op2.dot(dm.dot(op1))
+            cosangle=0.5*(tmp.trace()-1)
+            cosangle=min(0.9999999,cosangle)
+            cosangle=max(-0.9999999,cosangle)
+            newangle=np.arccos(cosangle)
+            if newangle<angle:
+                w,W=np.linalg.eig(tmp)
+                i=np.where(abs(np.real(w)-1)<1e-8)[0]
+                direction=np.real(W[:,i[-1]]).squeeze()
+                if abs(direction[0])>1e-8:
+                    sina=(tmp[2,1]-tmp[1,2])/2.0/direction[0]
+                    if sina<0:
+                        direction=-direction
+                    if direction[0]>direction[1] and direction[1]>direction[2] and direction[2]>0:
+                        angle=newangle
+                        axis=direction
+                tmp=tmp.T
+                w,W=np.linalg.eig(tmp)
+                i=np.where(abs(np.real(w)-1)<1e-8)[0]
+                direction=np.real(W[:,i[-1]]).squeeze()
+                if abs(direction[0])>1e-8:
+                    sina=(tmp[2,1]-tmp[1,2])/2.0/direction[0]
+                    if sina<0:
+                        direction=-direction
+                    if direction[0]>direction[1] and direction[1]>direction[2] and direction[2]>0:
+                        angle=newangle
+                        axis=direction
+
+    return axis,angle
+
 
 def Mat2Euler(m):
     """
