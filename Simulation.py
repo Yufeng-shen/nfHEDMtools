@@ -147,4 +147,4 @@ class CrystalStr:
                         if np.linalg.norm(G)<=maxQ:
                             if np.absolute(self.calStructFactor(np.array([h,k,l])))>1e-6:
                                 self.Gs.append(G)
-
+	self.Gs=np.array(self.Gs)
