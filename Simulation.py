@@ -114,6 +114,12 @@ class CrystalStr:
             self.addAtom([0,0.5,0.5],29)
             self.addAtom([0.5,0,0.5],29)
             self.addAtom([0.5,0.5,0],29)
+        elif material=='Ti7':
+            self.PrimA=2.92539*np.array([1,0,0])
+            self.PrimB=2.92539*np.array([np.cos(np.pi*2/3),np.sin(np.pi*2/3),0])
+            self.PrimC=4.67399*np.array([0,0,1])
+            self.addAtom([1/3.0,2/3.0,1/4.0],40)
+            self.addAtom([2/3.0,1/3.0,3/4.0],40)
         else:
             pass
     def setPrim(self,x,y,z):
