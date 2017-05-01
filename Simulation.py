@@ -154,3 +154,66 @@ class CrystalStr:
                             if np.absolute(self.calStructFactor(np.array([h,k,l])))>1e-6:
                                 self.Gs.append(G)
 	self.Gs=np.array(self.Gs)
+
+
+
+def GetProjectedVertex(Det1,sample,orien,etalimit,grainpos,**exp):
+    """
+    Get the observable projected vertex on a single detector and their G vectors.
+    Caution!!! This function only works for traditional nf-HEDM experiment setup.
+
+    Parameters
+    ------------
+    Det1: Detector
+            Remember to move this detector object to correct position first.
+    sample: CrystalStr
+            Must calculated G list
+    orien:  ndarray
+            Active rotation matrix of orientation at that vertex
+    etalimit: scalar
+            Limit of eta value. Usually is about 85.
+    grainpos: array
+            Position of that vertex in mic file, unit is mm.
+    exp: dict
+        X ray energy or wavelength
+
+    Returns
+    ------------
+    Peaks: ndarray
+            N*3 ndarray, records position of each peak. The first column is the J value, second is K value, third is omega value in degree.
+    Gs: ndarray
+        N*3 ndarray, records  corresponding G vector in sample frame.
+    """
+    Peaks=[]
+    Gs=[]
+    rotatedG=orien.dot(sample.Gs.T).T
+    for g1 in rotatedG:
+        res=frankie_angles_from_g(g1,verbo=False,**exp)
+        if res['chi']>=90:
+            pass
+        elif res['eta']>etalimit:
+            pass
+        else:
+            if -90<=res['omega_a']<=90:
+                omega=res['omega_a']/180.0*np.pi
+                newgrainx=np.cos(omega)*grainpos[0]-np.sin(omega)*grainpos[1]
+                newgrainy=np.cos(omega)*grainpos[1]+np.sin(omega)*grainpos[0]
+                try:
+                    idx=Det1.IntersectionIdx(np.array([newgrainx,newgrainy,0]),res['2Theta'],res['eta'])
+                except:
+                    print g1
+                    print res
+                if idx!=-1:
+                    Peaks.append([idx[0],idx[1],res['omega_a']])
+                    Gs.append(g1)
+            if -90<=res['omega_b']<=90:
+                omega=res['omega_b']/180.0*np.pi
+                newgrainx=np.cos(omega)*grainpos[0]-np.sin(omega)*grainpos[1]
+                newgrainy=np.cos(omega)*grainpos[1]+np.sin(omega)*grainpos[0]
+                idx=Det1.IntersectionIdx(np.array([newgrainx,newgrainy,0]),res['2Theta'],-res['eta'])
+                if idx!=-1:
+                    Peaks.append([idx[0],idx[1],res['omega_b']])
+                    Gs.append(g1)
+    Peaks=np.array(Peaks)
+    Gs=np.array(Gs)
+    return Peaks,Gs
