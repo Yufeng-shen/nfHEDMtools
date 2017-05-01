@@ -269,12 +269,6 @@ def Misorien2FZ1(m1,m2,symtype='Cubic'):
             oRes=tmp
     return oRes,angle
 
-#def Misorien2FZ3(m1,m2,symtype='Cubic'):
-#    m1=np.matrix(m1)
-#    dm=(m1.T).dot(m2)
-#    oRes,angle=Orien2FZ(dm,symtype)
-#    return oRes,angle
-#
 def Misorien2FZ2(m1,m2,symtype='Cubic'):
     """
     Careful, we need misorientation in crystal frame (eg. m2), it should be o2*m2T*m1*o1, the order matters. Then change m1 and m2 (just do transpose).
@@ -295,6 +289,61 @@ def Misorien2FZ2(m1,m2,symtype='Cubic'):
     angle:  scalar
             The misorientation angle. (0~180 degree)
     """
+    if symtype!='Cubic':
+        print "only calculate axis for cubic symmetry"
+        return
+    m2=np.matrix(m2)
+    dm=(m2.T).dot(m1)
+    ops=GetSymRotMat(symtype)
+    angle=6.3
+    for op1 in ops:
+        for op2 in ops:
+            tmp=op2.dot(dm.dot(op1))
+            cosangle=0.5*(tmp.trace()-1)
+            cosangle=min(0.9999999,cosangle)
+            cosangle=max(-0.9999999,cosangle)
+            newangle=np.arccos(cosangle)
+            if newangle<angle:
+                sina=np.sin(newangle)
+                direction=np.zeros(3)
+                direction[0]=(tmp[2,1]-tmp[1,2])/2.0/sina
+                direction[1]=(tmp[0,2]-tmp[2,0])/2.0/sina
+                direction[2]=(tmp[1,0]-tmp[0,1])/2.0/sina
+                if direction[0]>direction[1] and direction[1]>direction[2] and direction[2]>0:
+                    angle=newangle
+                    axis=direction
+                else:
+                    direction=-direction
+                    if direction[0]>direction[1] and direction[1]>direction[2] and direction[2]>0:
+                        angle=newangle
+                        axis=direction
+
+    return axis,angle
+
+
+def Misorien2FZ3(m1,m2,symtype='Cubic'):
+    """
+    Careful, we need misorientation in crystal frame (eg. m2), it should be o2*m2T*m1*o1, the order matters. Then change m1 and m2 (just do transpose).
+
+    Parameters
+    -----------
+    m1:     ndarray
+            Matrix representation of orientation1
+    m2:     ndarray
+            Matrix representation of orientation2
+    symtype:string
+            The crystal symmetry
+
+    Returns
+    -----------
+    axis:   ndarray
+            The unit vector of rotation direction.
+    angle:  scalar
+            The misorientation angle. (0~180 degree)
+    """
+    if symtype!='Cubic':
+        print "only calculate axis for cubic symmetry"
+        return
     m2=np.matrix(m2)
     dm=(m2.T).dot(m1)
     ops=GetSymRotMat(symtype)
