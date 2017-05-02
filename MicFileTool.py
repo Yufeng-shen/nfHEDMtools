@@ -97,7 +97,7 @@ def read_mic_file(fname):
     # print sw
 
 
-def plot_mic(snp,sw,plotType,minConfidence):
+def plot_mic(snp,sw,plotType,minConfidence,scattersize=2):
     '''
     plot the mic file
     :param snp:
@@ -126,7 +126,8 @@ def plot_mic(snp,sw,plotType,minConfidence):
             rod[i,:] = RotRep.rod_from_quaternion(quat[i,:])
         print rod
         fig, ax = plt.subplots()
-        ax.scatter(snp[:,0],snp[:,1],s=200,facecolors=(rod+np.array([1,1,1]))/2)
+        ax.scatter(snp[:,0],snp[:,1],s=scattersize,facecolors=(rod+np.array([1,1,1]))/2)
+        ax.axis('scaled')
         plt.show()
 
 
