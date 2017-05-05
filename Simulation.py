@@ -158,7 +158,7 @@ class CrystalStr:
 
 
 
-def GetProjectedVertex(Det1,sample,orien,etalimit,grainpos,**exp):
+def GetProjectedVertex(Det1,sample,orien,etalimit,grainpos,getPeaksInfo=False,**exp):
     """
     Get the observable projected vertex on a single detector and their G vectors.
     Caution!!! This function only works for traditional nf-HEDM experiment setup.
@@ -187,6 +187,7 @@ def GetProjectedVertex(Det1,sample,orien,etalimit,grainpos,**exp):
     """
     Peaks=[]
     Gs=[]
+    PeaksInfo=[]
     rotatedG=orien.dot(sample.Gs.T).T
     for g1 in rotatedG:
         res=frankie_angles_from_g(g1,verbo=False,**exp)
@@ -207,6 +208,8 @@ def GetProjectedVertex(Det1,sample,orien,etalimit,grainpos,**exp):
                 if idx!=-1:
                     Peaks.append([idx[0],idx[1],res['omega_a']])
                     Gs.append(g1)
+                    if getPeaksInfo:
+                        PeaksInfo.append({'WhichOmega':'a','chi':res['chi'],'omega_0':res['omega_0']})
             if -90<=res['omega_b']<=90:
                 omega=res['omega_b']/180.0*np.pi
                 newgrainx=np.cos(omega)*grainpos[0]-np.sin(omega)*grainpos[1]
@@ -215,6 +218,10 @@ def GetProjectedVertex(Det1,sample,orien,etalimit,grainpos,**exp):
                 if idx!=-1:
                     Peaks.append([idx[0],idx[1],res['omega_b']])
                     Gs.append(g1)
+                    if getPeaksInfo:
+                        PeaksInfo.append({'WhichOmega':'b','chi':res['chi'],'omega_0':res['omega_0']})
     Peaks=np.array(Peaks)
     Gs=np.array(Gs)
+    if getPeaksInfo:
+        return Peaks,Gs,PeaksInfo
     return Peaks,Gs
