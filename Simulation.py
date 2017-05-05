@@ -58,7 +58,8 @@ def frankie_angles_from_g( g ,verbo=True, **exp ):
         print 'omega_a: ',omega_res1*180/np.pi
         print 'omega_b: ',omega_res2*180/np.pi
         print 'eta: ',eta*180/np.pi
-    return {'chi':np.arccos(cos_chi)*180/np.pi,'2Theta':2*np.arcsin(sin_theta),'eta':eta,'omega_a':omega_res1*180/np.pi,'omega_b':omega_res2*180/np.pi} 
+    return {'chi':np.arccos(cos_chi)*180/np.pi,'2Theta':2*np.arcsin(sin_theta),'eta':eta,
+	'omega_a':omega_res1*180/np.pi,'omega_b':omega_res2*180/np.pi,'omega_0':omega_0*180/np.pi}
 
 class Detector:
     def __init__(self):
