@@ -50,6 +50,14 @@ def Crop(meshall,f):
     newmesh=np.delete(meshall,todel,axis=0)
     return newmesh
 
+def PoreCut(x,y,a,b,c,d):
+    if x>0.3 and -0.1<y<-0.01:
+	return False
+    elif x>a and x<b and y>c and y<d:
+        return True
+    else:
+        return False
+
 def SimpleCut(x,y,a,b,c,d):
     if x>a and x<b and y>c and y<d:
         return True
@@ -58,7 +66,7 @@ def SimpleCut(x,y,a,b,c,d):
 
 def MicOut(mesh,initlen):
     newmesh=np.array(mesh)
-    np.savetxt('try.mic',mesh,fmt=['%.6f','%.6f']+['%d']*8,delimiter='\t',header=str(initlen),comments='')
+    np.savetxt('try.mic',mesh,fmt=['%.6f']*2+['%d']*4+['%.4f']*(len(mesh[0])-6),delimiter='\t',header=str(initlen),comments='')
     return
 
 def main(leftx,lefty,minlen,N1,N2,Ngen,a,b,c,d):
