@@ -64,9 +64,9 @@ def SimpleCut(x,y,a,b,c,d):
     else:
         return False
 
-def MicOut(mesh,initlen):
+def MicOut(mesh,initlen,filename='try.mic'):
     newmesh=np.array(mesh)
-    np.savetxt('try.mic',mesh,fmt=['%.6f']*2+['%d']*4+['%.4f']*(len(mesh[0])-6),delimiter='\t',header=str(initlen),comments='')
+    np.savetxt(filename,mesh,fmt=['%.6f']*2+['%d']*4+['%.4f']*(len(mesh[0])-6),delimiter='\t',header=str(initlen),comments='')
     return
 
 def main(leftx,lefty,minlen,N1,N2,Ngen,a,b,c,d):
