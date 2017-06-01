@@ -4,7 +4,11 @@ Wed Apr 26 2017
 This script will contains the basic tool for reading mic file and plot them.
 '''
 import numpy as np
+import matplotlib
+matplotlib.use('GTKAgg')
 import matplotlib.pyplot as plt
+from matplotlib.patches import Polygon
+from matplotlib.collections import PatchCollection
 import pandas as pd
 import RotRep
 
@@ -54,6 +58,7 @@ def save_mic_file(fname,snp,sw):
     # target.write('\n')
     # target.close()
     np.savetxt(fname,snp,delimiter=' ',fmt='%f',header=str(sw),comments='')
+
 
 def read_mic_file(fname):
     '''
@@ -130,6 +135,91 @@ def plot_mic(snp,sw,plotType,minConfidence,scattersize=2):
         ax.axis('scaled')
         plt.show()
 
+class MicFile():
+    def __init__(self,fname):
+        self.sw, self.snp=self.read_mic_file(fname)
+        self.color2=self.snp[:,9]
+        self.patches=None
+        self.color1=None
+
+    def read_mic_file(self,fname):
+        '''
+        this will read the mic file
+          %%
+          %% Legacy File Format:
+          %% Col 0-2 x, y, z
+          %% Col 3   1 = triangle pointing up, 2 = triangle pointing down
+          %% Col 4 generation number; triangle size = sidewidth /(2^generation number )
+          %% Col 5 Phase - 1 = exist, 0 = not fitted
+          %% Col 6-8 orientation
+          %% Col 9  Confidence
+          %%
+        :param fname:
+        :return:
+            sw: float, the side width
+            snp: [n_voxel,n_feature] numpy array
+
+        '''
+        with open(fname) as f:
+            content = f.readlines()
+        print(content[1])
+        print(type(content[1]))
+        sw = float(content[0])
+        try:
+            snp = np.array([[float(i) for i in s.split(' ')] for s in content[1:]])
+        except ValueError:
+            try:
+                snp = np.array([[float(i) for i in s.split('\t')] for s in content[1:]])
+            except ValueError:
+                print 'unknown deliminater'
+
+        print('sw is {0} \n'.format(sw))
+        print('shape of snp is {0}'.format(snp.shape))
+        return sw,snp
+
+
+    def plot_mic_patches(self,plotType,minConfidence):
+        indx=self.snp[:,9]>=minConfidence
+        snp = self.snp
+        minsw=self.sw/float(2**snp[0,4])
+        tsw1=minsw*0.5
+        tsw2=minsw*0.5*3**0.5
+        if plotType==2:
+            fig, ax = plt.subplots()
+            if self.patches==None:
+                self.patches=[]
+                for voxel in snp:
+                    xy=voxel[:2]
+                    self.patches.append(Polygon([xy,xy+np.array((minsw,0)),xy+np.array((tsw1,tsw2*(-1)**(voxel[3]-1)))],True))
+            self.patches=np.array(self.patches)
+            p=PatchCollection(self.patches[indx],cmap='viridis')
+            p.set_array(self.color2[indx])
+            p.set_edgecolor('face')
+            ax.add_collection(p)
+            fig.colorbar(p,ax=ax)
+            plt.show()
+        if plotType==1:
+            fig, ax = plt.subplots()
+            N=len(self.snp)
+            mat = np.empty([N,3,3])
+            quat = np.empty([N,4])
+            rod = np.empty([N,3])
+            if self.color1==None:
+                for i in range(N):
+                    mat[i,:,:] = RotRep.EulerZXZ2Mat(self.snp[i,6:9]/180.0*np.pi)
+                    quat[i,:] = RotRep.quaternion_from_matrix(mat[i,:,:])
+                    rod[i,:] = RotRep.rod_from_quaternion(quat[i,:])
+                self.color1=(rod+np.array([1,1,1]))/2
+            if self.patches==None:
+                self.patches=[]
+                for voxel in snp:
+                    xy=voxel[:2]
+                    self.patches.append(Polygon([xy,xy+np.array((minsw,0)),xy+np.array((tsw1,tsw2*(-1)**(voxel[3]-1)))],True))
+                self.patches=np.array(self.patches)
+            p=PatchCollection(self.patches[indx],match_original=True)
+            p.set_color(self.color1[indx])
+            ax.add_collection(p)
+            plt.show()
 
 def simple_plot(snp,sw,plotType,minConfidence):
     '''
