@@ -5,11 +5,11 @@ This script will contains the basic tool for reading mic file and plot them.
 '''
 import numpy as np
 import matplotlib
-matplotlib.use('GTKAgg')
+#matplotlib.use('GTKAgg')
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
 from matplotlib.collections import PatchCollection
-import pandas as pd
+from matplotlib.collections import PolyCollection
 import RotRep
 
 def dist_to_line(point,line):
@@ -139,8 +139,8 @@ class MicFile():
     def __init__(self,fname):
         self.sw, self.snp=self.read_mic_file(fname)
         self.color2=self.snp[:,9]
-        self.patches=None
-        self.color1=None
+        self.bpatches=False
+        self.bcolor1=False
 
     def read_mic_file(self,fname):
         '''
@@ -177,25 +177,26 @@ class MicFile():
         print('shape of snp is {0}'.format(snp.shape))
         return sw,snp
 
-
     def plot_mic_patches(self,plotType,minConfidence):
         indx=self.snp[:,9]>=minConfidence
-        snp = self.snp
-        minsw=self.sw/float(2**snp[0,4])
+        minsw=self.sw/float(2**self.snp[0,4])
         tsw1=minsw*0.5
-        tsw2=minsw*0.5*3**0.5
+        tsw2=-minsw*0.5*3**0.5
+        ntri=len(self.snp)
         if plotType==2:
             fig, ax = plt.subplots()
-            if self.patches==None:
-                self.patches=[]
-                for voxel in snp:
-                    xy=voxel[:2]
-                    self.patches.append(Polygon([xy,xy+np.array((minsw,0)),xy+np.array((tsw1,tsw2*(-1)**(voxel[3]-1)))],True))
-            self.patches=np.array(self.patches)
-            p=PatchCollection(self.patches[indx],cmap='viridis')
+            if self.bpatches==False:
+                xy=self.snp[:,:2]
+                tmp=np.asarray([[tsw1]*ntri,(-1)**self.snp[:,3]*tsw2]).transpose()
+                tris=np.asarray([[[0,0]]*ntri,[[minsw,0]]*ntri,tmp])
+                self.patches=np.swapaxes(tris+xy,0,1)
+                self.bpatches=True
+            p=PolyCollection(self.patches[indx],cmap='viridis')
             p.set_array(self.color2[indx])
             p.set_edgecolor('face')
             ax.add_collection(p)
+            ax.set_xlim([-0.6,0.6])
+            ax.set_ylim([-0.6,0.6])
             fig.colorbar(p,ax=ax)
             plt.show()
         if plotType==1:
@@ -204,21 +205,24 @@ class MicFile():
             mat = np.empty([N,3,3])
             quat = np.empty([N,4])
             rod = np.empty([N,3])
-            if self.color1==None:
+            if self.bcolor1==False:
                 for i in range(N):
                     mat[i,:,:] = RotRep.EulerZXZ2Mat(self.snp[i,6:9]/180.0*np.pi)
                     quat[i,:] = RotRep.quaternion_from_matrix(mat[i,:,:])
                     rod[i,:] = RotRep.rod_from_quaternion(quat[i,:])
                 self.color1=(rod+np.array([1,1,1]))/2
-            if self.patches==None:
-                self.patches=[]
-                for voxel in snp:
-                    xy=voxel[:2]
-                    self.patches.append(Polygon([xy,xy+np.array((minsw,0)),xy+np.array((tsw1,tsw2*(-1)**(voxel[3]-1)))],True))
-                self.patches=np.array(self.patches)
-            p=PatchCollection(self.patches[indx],match_original=True)
+                self.bcolor1=True
+            if self.bpatches==False:
+                xy=self.snp[:,:2]
+                tmp=np.asarray([[tsw1]*ntri,(-1)**self.snp[:,3]*tsw2]).transpose()
+                tris=np.asarray([[[0,0]]*ntri,[[minsw,0]]*ntri,tmp])
+                self.patches=np.swapaxes(tris+xy,0,1)
+                self.bpatches=True
+            p=PolyCollection(self.patches[indx],cmap='viridis')
             p.set_color(self.color1[indx])
             ax.add_collection(p)
+            ax.set_xlim([-0.6,0.6])
+            ax.set_ylim([-0.6,0.6])
             plt.show()
 
 def simple_plot(snp,sw,plotType,minConfidence):
