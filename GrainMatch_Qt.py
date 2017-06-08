@@ -1,4 +1,5 @@
 # coding: utf-8
+import pickle
 import h5py
 import numpy as np
 import sys, os
@@ -20,6 +21,8 @@ class WorkingWindow(QMainWindow):
         self.mainwindow=_mainwindow
         self.create_main_frame()
         self.create_status_bar()
+        self.scattersets=[]
+        self.s1hat=((self.mainwindow.s1[self.mainwindow.backnomatched])/3).astype(int)
 
     def create_status_bar(self):
         self.status_text = QLabel("This is a demo")
@@ -48,7 +51,19 @@ class WorkingWindow(QMainWindow):
             self.imobj1.set_data(self.mainwindow.IPF1[self.idx1]*tmp1)
             self.imobj1.set_alpha(alpha)
         self.canvas.draw()
-        
+       
+    def draw_scatter_trial(self):
+        if len(self.scattersets)!=0:
+            self.scattersets[0].remove()
+            self.canvas.draw()
+            self.scattersets=[]
+            return
+        mask=np.where(self.s1hat[:,2]==self.idx1)
+        candidate=self.s1hat[mask]
+        self.axes1.autoscale(False)
+        self.scattersets.append(self.axes1.scatter(candidate[:,0],candidate[:,1]))
+        self.canvas.draw()
+
 
     def change_idxs(self,cvalue):
         self.idx0+=cvalue
@@ -63,11 +78,13 @@ class WorkingWindow(QMainWindow):
             self.canvas.mpl_disconnect(self.cid)
 
     def on_click(self,event):
-        x=int(round(event.xdata))
-        y=int(round(event.ydata))
         if event.inaxes==self.axes0:
+            x=int(round(event.xdata))
+            y=int(round(event.ydata))
             self.l0.setText("ID:{:}".format(self.mainwindow.ID0[self.idx0][y,x,0]))
         if event.inaxes==self.axes1:
+            x=int(round(event.xdata))
+            y=int(round(event.ydata))
             self.l1.setText("ID:{:}".format(self.mainwindow.ID1[self.idx1][y,x,0]))
 
     def create_main_frame(self):
@@ -114,7 +131,7 @@ class WorkingWindow(QMainWindow):
         self.l1.setText("Grain 1 information")
 
         self.draw_button = QPushButton("&Draw")
-        self.connect(self.draw_button, SIGNAL('clicked()'),self.on_draw)
+        self.connect(self.draw_button, SIGNAL('clicked()'),self.draw_scatter_trial)
 
         hbox = QHBoxLayout()
         hbox.addWidget(self.sp0)
@@ -156,6 +173,14 @@ class AppForm(QMainWindow):
         self.IPF1=self.a1['DataContainers']['ImageDataContainer']['CellData']['IPFColor']
         self.Mask1=self.a1['DataContainers']['ImageDataContainer']['CellData']['Mask']
 
+        self.s0=np.loadtxt('/home/fyshen13/Downloads/AngFiles_Anneal0_Output/centroids._2deg_27.txt')[1:]
+        self.s1=np.loadtxt('/home/fyshen13/Downloads/AngFiles_Anneal1_Output/centroids._2deg_27.txt')[1:]
+
+        self.e0=np.loadtxt('/home/fyshen13/Downloads/AngFiles_Anneal0_Output/AvgEulerAngles._2deg_27.txt')[1:]
+        self.e1=np.loadtxt('/home/fyshen13/Downloads/AngFiles_Anneal1_Output/AvgEulerAngles._2deg_27.txt')[1:]
+
+        self.backnomatched=pickle.load(open('/home/fyshen13/Fe/matchID/2deg27/nomatchgrain_backward.pickle','r'))
+
         self.workingwindow=WorkingWindow(_mainwindow=self)
         self.workingwindow.show()
     def load_plot(self):
@@ -170,7 +195,7 @@ class AppForm(QMainWindow):
         self.a1 = h5py.File(filename1)
         self.ID1=self.a1['DataContainers']['ImageDataContainer']['CellData']['FeatureIds']
         self.IPF1=self.a1['DataContainers']['ImageDataContainer']['CellData']['IPFColor']
-
+        
         self.workingwindow=WorkingWindow(_mainwindow=self)
         self.workingwindow.show()
 
@@ -199,51 +224,16 @@ class AppForm(QMainWindow):
 
     def create_main_frame(self):
         self.main_frame=QWidget()
-#        self.canvas.mpl_connect('button_press_event',self.on_button)
-        # Bind the 'pick' event for clicking on one of the bars
-        #
-#        self.canvas.mpl_connect('pick_event', self.on_pick)
-        
-        # Create the navigation toolbar, tied to the canvas
-        #
-        
-        # Other GUI controls
-        # 
-#        self.textbox = QLineEdit()
-#        self.textbox.setMinimumWidth(200)
-##        self.connect(self.textbox, SIGNAL('editingFinished ()'), self.on_draw)
-#        
-#        self.draw_button = QPushButton("&Draw")
-#        self.connect(self.draw_button, SIGNAL('clicked()'), self.on_draw)
-#        
-#        self.grid_cb = QCheckBox("Show &Grid")
-#        self.grid_cb.setChecked(False)
-#        self.connect(self.grid_cb, SIGNAL('stateChanged(int)'), self.on_draw)
-#        
         slider_label = QLabel('alpha (%):')
         self.slider = QSlider(Qt.Horizontal)
         self.slider.setRange(0, 100)
         self.slider.setValue(50)
         self.slider.setTracking(True)
         self.slider.setTickPosition(QSlider.TicksBothSides)
-#        self.connect(self.slider, SIGNAL('valueChanged(int)'), self.on_draw)
+
+#        self.centroid0=QLineEdit()
+#        self.centroid1=QLineEdit()
         
-        #
-        # Layout with box sizers
-        # 
-#        hbox = QHBoxLayout()
-#        
-#        for w in [  self.textbox, self.draw_button, self.grid_cb,
-#                    slider_label, self.slider]:
-#            hbox.addWidget(w)
-#            hbox.setAlignment(w, Qt.AlignVCenter)
-#        
-#        vbox = QVBoxLayout()
-#        vbox.addWidget(self.canvas)
-#        vbox.addWidget(self.mpl_toolbar)
-#        vbox.addLayout(hbox)
-#        
-#        self.main_frame.setLayout(vbox)
         self.setCentralWidget(self.slider)
         return
 
