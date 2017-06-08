@@ -1,5 +1,6 @@
 # coding: utf-8
 import h5py
+import numpy as np
 import sys, os
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
@@ -31,13 +32,21 @@ class WorkingWindow(QMainWindow):
         self.idx0=self.sp0.value()
         self.idx1=self.sp1.value()
         alpha=self.mainwindow.slider.value()/100.0
+
+        tmp0=self.mainwindow.Mask0[self.idx0][:,:,0]
+        tmp1=self.mainwindow.Mask1[self.idx1][:,:,0]
+        tmp0=np.stack((tmp0,tmp0,tmp0),axis=-1)
+        tmp1=np.stack((tmp1,tmp1,tmp1),axis=-1)
+
         if self.bfirstdraw==True:
-            self.imobj0=self.axes0.imshow(self.mainwindow.IPF0[self.idx0],interpolation='nearest',alpha=alpha,origin='lower')
-            self.imobj1=self.axes1.imshow(self.mainwindow.IPF1[self.idx1],interpolation='nearest',alpha=alpha,origin='lower')
+            self.imobj0=self.axes0.imshow(self.mainwindow.IPF0[self.idx0]*tmp0,interpolation='nearest',alpha=alpha,origin='lower')
+            self.imobj1=self.axes1.imshow(self.mainwindow.IPF1[self.idx1]*tmp1,interpolation='nearest',alpha=alpha,origin='lower')
             self.bfirstdraw=False
         else:
-            self.imobj0.set_data(self.mainwindow.IPF0[self.idx0])
-            self.imobj1.set_data(self.mainwindow.IPF1[self.idx1])
+            self.imobj0.set_data(self.mainwindow.IPF0[self.idx0]*tmp0)
+            self.imobj0.set_alpha(alpha)
+            self.imobj1.set_data(self.mainwindow.IPF1[self.idx1]*tmp1)
+            self.imobj1.set_alpha(alpha)
         self.canvas.draw()
         
 
@@ -54,10 +63,12 @@ class WorkingWindow(QMainWindow):
             self.canvas.mpl_disconnect(self.cid)
 
     def on_click(self,event):
+        x=int(round(event.xdata))
+        y=int(round(event.ydata))
         if event.inaxes==self.axes0:
-            self.l0.setText("x={:}, y={:}".format(event.xdata,event.ydata))
+            self.l0.setText("ID:{:}".format(self.mainwindow.ID0[self.idx0][y,x,0]))
         if event.inaxes==self.axes1:
-            self.l1.setText("x={:}, y={:}".format(event.xdata,event.ydata))
+            self.l1.setText("ID:{:}".format(self.mainwindow.ID1[self.idx1][y,x,0]))
 
     def create_main_frame(self):
 
@@ -138,21 +149,24 @@ class AppForm(QMainWindow):
         self.a0 = h5py.File('/home/fyshen13/Downloads/AngFiles_Anneal0_Output/Segment_15_2deg_27.dream3d')
         self.ID0=self.a0['DataContainers']['ImageDataContainer']['CellData']['FeatureIds']
         self.IPF0=self.a0['DataContainers']['ImageDataContainer']['CellData']['IPFColor']
+        self.Mask0=self.a0['DataContainers']['ImageDataContainer']['CellData']['Mask']
+
         self.a1 = h5py.File('/home/fyshen13/Downloads/AngFiles_Anneal1_Output/Segment_match_2deg_27.dream3d')
         self.ID1=self.a1['DataContainers']['ImageDataContainer']['CellData']['FeatureIds']
         self.IPF1=self.a1['DataContainers']['ImageDataContainer']['CellData']['IPFColor']
+        self.Mask1=self.a1['DataContainers']['ImageDataContainer']['CellData']['Mask']
 
         self.workingwindow=WorkingWindow(_mainwindow=self)
         self.workingwindow.show()
     def load_plot(self):
         file_choices = "DREAM3D (*.dream3d)"
         filename0 = unicode(QFileDialog.getOpenFileName(self,
-                'Load file 0','',file_choices))
+                'Load state 0 file','',file_choices))
         self.a0 = h5py.File(filename0)
         self.ID0=self.a0['DataContainers']['ImageDataContainer']['CellData']['FeatureIds']
         self.IPF0=self.a0['DataContainers']['ImageDataContainer']['CellData']['IPFColor']
         filename1 = unicode(QFileDialog.getOpenFileName(self,
-                'Load file 1','',file_choices))
+                'Load state 1 file','',file_choices))
         self.a1 = h5py.File(filename1)
         self.ID1=self.a1['DataContainers']['ImageDataContainer']['CellData']['FeatureIds']
         self.IPF1=self.a1['DataContainers']['ImageDataContainer']['CellData']['IPFColor']
