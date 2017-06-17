@@ -1,5 +1,7 @@
 import numpy as np
+from fractions import Fraction
 from math import floor
+from matplotlib import path
 
 def frankie_angles_from_g( g ,verbo=True, **exp ):
     """
@@ -77,16 +79,33 @@ class Detector:
         self.__Norm=tilt.dot(self.__Norm)
         self.__Jvector=tilt.dot(self.__Jvector)
         self.__Kvector=tilt.dot(self.__Kvector)
-    def IntersectionIdx(self,ScatterSrc,TwoTheta,eta):
+    def IntersectionIdx(self,ScatterSrc,TwoTheta,eta,bIdx=True):
         dist=self.__Norm.dot(self.__CoordOrigin-ScatterSrc)
         scatterdir=np.array([np.cos(TwoTheta),np.sin(TwoTheta)*np.sin(eta),np.sin(TwoTheta)*np.cos(eta)])
         InterPos=dist/(self.__Norm.dot(scatterdir))*scatterdir+ScatterSrc
-        J=int(self.__Jvector.dot(InterPos-self.__CoordOrigin)/self.__PixelJ)
-        K=int(self.__Kvector.dot(InterPos-self.__CoordOrigin)/self.__PixelK)
-        if 0 <= J <= 2047 and 0 <= K <= 2047:
-            return J,K
+        J=(self.__Jvector.dot(InterPos-self.__CoordOrigin)/self.__PixelJ)
+        K=(self.__Kvector.dot(InterPos-self.__CoordOrigin)/self.__PixelK)
+        if 0 <= int(J) < self.__NPixelJ and 0 <= int(K) < self.__NPixelK:
+            if bIdx==True:
+                return int(J),int(K)
+            else:
+                return J,K
         else:
             return -1
+    def BackProj(self,HitPos,omega,TwoTheta,eta):
+        """
+        HitPos: ndarray (3,)
+                The position of hitted point on lab coord, unit in mm
+        """
+        scatterdir=np.array([np.cos(TwoTheta),np.sin(TwoTheta)*np.sin(eta),np.sin(TwoTheta)*np.cos(eta)])
+        t=HitPos[2]/(np.sin(TwoTheta)*np.cos(eta))
+        x=HitPos[0]-t*np.cos(TwoTheta)
+        y=HitPos[1]-t*np.sin(TwoTheta)*np.sin(eta)
+        truex=np.cos(omega)*x+np.sin(omega)*y
+        truey=-np.sin(omega)*x+np.cos(omega)*y
+        return np.array([truex,truey])
+    def Idx2LabCord(self,J,K):
+        return J*self.__PixelJ*self.__Jvector+K*self.__PixelK*self.__Kvector+self.__CoordOrigin
     def Reset(self):
         self.__init__()
     def Print(self):
@@ -158,7 +177,7 @@ class CrystalStr:
 
 
 
-def GetProjectedVertex(Det1,sample,orien,etalimit,grainpos,getPeaksInfo=False,**exp):
+def GetProjectedVertex(Det1,sample,orien,etalimit,grainpos,getPeaksInfo=False,bIdx=True,**exp):
     """
     Get the observable projected vertex on a single detector and their G vectors.
     Caution!!! This function only works for traditional nf-HEDM experiment setup.
@@ -200,28 +219,74 @@ def GetProjectedVertex(Det1,sample,orien,etalimit,grainpos,getPeaksInfo=False,**
                 omega=res['omega_a']/180.0*np.pi
                 newgrainx=np.cos(omega)*grainpos[0]-np.sin(omega)*grainpos[1]
                 newgrainy=np.cos(omega)*grainpos[1]+np.sin(omega)*grainpos[0]
-                try:
-                    idx=Det1.IntersectionIdx(np.array([newgrainx,newgrainy,0]),res['2Theta'],res['eta'])
-                except:
-                    print g1
-                    print res
+                idx=Det1.IntersectionIdx(np.array([newgrainx,newgrainy,0]),res['2Theta'],res['eta'],bIdx)
                 if idx!=-1:
                     Peaks.append([idx[0],idx[1],res['omega_a']])
                     Gs.append(g1)
                     if getPeaksInfo:
-                        PeaksInfo.append({'WhichOmega':'a','chi':res['chi'],'omega_0':res['omega_0']})
+                        PeaksInfo.append({'WhichOmega':'a','chi':res['chi'],'omega_0':res['omega_0'],
+                            '2Theta':res['2Theta'],'eta':res['eta']})
             if -90<=res['omega_b']<=90:
                 omega=res['omega_b']/180.0*np.pi
                 newgrainx=np.cos(omega)*grainpos[0]-np.sin(omega)*grainpos[1]
                 newgrainy=np.cos(omega)*grainpos[1]+np.sin(omega)*grainpos[0]
-                idx=Det1.IntersectionIdx(np.array([newgrainx,newgrainy,0]),res['2Theta'],-res['eta'])
+                idx=Det1.IntersectionIdx(np.array([newgrainx,newgrainy,0]),res['2Theta'],-res['eta'],bIdx)
                 if idx!=-1:
                     Peaks.append([idx[0],idx[1],res['omega_b']])
                     Gs.append(g1)
                     if getPeaksInfo:
-                        PeaksInfo.append({'WhichOmega':'b','chi':res['chi'],'omega_0':res['omega_0']})
+                        PeaksInfo.append({'WhichOmega':'b','chi':res['chi'],'omega_0':res['omega_0'],
+                            '2Theta':res['2Theta'],'eta':-res['eta']})
     Peaks=np.array(Peaks)
     Gs=np.array(Gs)
     if getPeaksInfo:
         return Peaks,Gs,PeaksInfo
     return Peaks,Gs
+
+def digitize(xy):
+    """
+    xy: ndarray shape(4,2)
+        J and K indices in float, four points. This digitize method is far from ideal
+
+    Returns
+    -------------
+    f: list
+        list of integer tuples (J,K) that is hitted. (filled polygon)
+
+    """
+    p=path.Path(xy)
+    def line(pixels, x0, y0, x1, y1):
+        brev = True
+        if abs(y1 - y0) <= abs(x1 - x0):
+            x0, y0, x1, y1 = y0, x0, y1, x1
+            brev = False
+        if x1 < x0:
+            x0, y0, x1, y1 = x1, y1, x0, y0
+        leny = abs(y1 - y0)
+        for i in range(leny + 1):
+            if brev:
+                pixels.append((int(round(Fraction(i, leny) * (x1 - x0))) + x0, int(1 if y1 > y0 else -1) * i + y0))
+            else:
+                pixels.append(( int(1 if y1 > y0 else -1) * i + y0,int(round(Fraction(i, leny) * (x1 - x0))) + x0))
+    bnd=p.get_extents().get_points().astype(int)
+    ixy=xy.astype(int)
+    pixels=[]
+    line(pixels,ixy[0,0],ixy[0,1],ixy[1,0],ixy[1,1])
+    line(pixels,ixy[1,0],ixy[1,1],ixy[2,0],ixy[2,1])
+    line(pixels,ixy[2,0],ixy[2,1],ixy[3,0],ixy[3,1])
+    line(pixels,ixy[3,0],ixy[3,1],ixy[0,0],ixy[0,1])
+    pixels=list(set(pixels))
+    points=[]
+    for jj in range(bnd[0,0],bnd[1,0]+1):
+        for kk in range(bnd[0,1],bnd[1,1]+1):
+            points.append((jj,kk))
+    points=np.asarray(points)
+    mask=p.contains_points(points)
+
+    ipoints=points[mask]
+
+    f=list(set([tuple(ii) for ii in ipoints]))
+
+    f.extend(pixels)
+    f=list(set(f))
+    return f

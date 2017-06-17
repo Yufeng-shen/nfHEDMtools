@@ -90,7 +90,9 @@ def Q2Mat(q0,q1,q2,q3):
     """
     convert quarternion to active matrix
     """
-    m=np.matrix([[1-2*q2**2-2*q3**2,2*q1*q2+2*q0*q3,2*q1*q3-2*q0*q2],[2*q1*q2-2*q0*q3,1-2*q1**2-2*q3**2,2*q2*q3+2*q0*q1],[2*q1*q3+2*q0*q2,2*q2*q3-2*q0*q1,1-2*q1**2-2*q2**2]])
+    m=np.matrix([[1-2*q2**2-2*q3**2,2*q1*q2+2*q0*q3,2*q1*q3-2*q0*q2],
+        [2*q1*q2-2*q0*q3,1-2*q1**2-2*q3**2,2*q2*q3+2*q0*q1],
+        [2*q1*q3+2*q0*q2,2*q2*q3-2*q0*q1,1-2*q1**2-2*q2**2]])
     return m.T
 
 def Euler2Mat(e):
