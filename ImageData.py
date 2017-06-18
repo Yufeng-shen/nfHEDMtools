@@ -22,3 +22,21 @@ class ExpImage:
             return True
         else:
             return False
+
+class SimImage:
+    def __init__(self,NumOmega,NumDet):
+        self.NumOmega=NumOmega
+        self.NumDet=NumDet
+        self.images=[]
+        for tomega in range(NumOmega):
+            tmpOmega=[]
+            for tdet in range(NumDet):
+                tmpOmega.append(set())
+            self.images.append(tmpOmega)
+    def AddHit(self,pixels,omega,det):
+        self.images[omega][det].update(pixels)
+    def IsBright(self,omega,L,J,K):
+        if tuple((J,K)) in self.images[omega][L]:
+            return True
+        else:
+            return False

@@ -250,12 +250,15 @@ def digitize(xy):
 
     Returns
     -------------
-    f: list
+    f: set
         list of integer tuples (J,K) that is hitted. (filled polygon)
 
     """
     p=path.Path(xy)
     def line(pixels, x0, y0, x1, y1):
+        if x0==x1 and y0==y1:
+            pixels.add((x0,y0))
+            return
         brev = True
         if abs(y1 - y0) <= abs(x1 - x0):
             x0, y0, x1, y1 = y0, x0, y1, x1
@@ -265,17 +268,16 @@ def digitize(xy):
         leny = abs(y1 - y0)
         for i in range(leny + 1):
             if brev:
-                pixels.append((int(round(Fraction(i, leny) * (x1 - x0))) + x0, int(1 if y1 > y0 else -1) * i + y0))
+                pixels.add(tuple((int(round(Fraction(i, leny) * (x1 - x0))) + x0, int(1 if y1 > y0 else -1) * i + y0)))
             else:
-                pixels.append(( int(1 if y1 > y0 else -1) * i + y0,int(round(Fraction(i, leny) * (x1 - x0))) + x0))
+                pixels.add(tuple(( int(1 if y1 > y0 else -1) * i + y0,int(round(Fraction(i, leny) * (x1 - x0))) + x0)))
     bnd=p.get_extents().get_points().astype(int)
     ixy=xy.astype(int)
-    pixels=[]
+    pixels=set()
     line(pixels,ixy[0,0],ixy[0,1],ixy[1,0],ixy[1,1])
     line(pixels,ixy[1,0],ixy[1,1],ixy[2,0],ixy[2,1])
     line(pixels,ixy[2,0],ixy[2,1],ixy[3,0],ixy[3,1])
     line(pixels,ixy[3,0],ixy[3,1],ixy[0,0],ixy[0,1])
-    pixels=list(set(pixels))
     points=[]
     for jj in range(bnd[0,0],bnd[1,0]+1):
         for kk in range(bnd[0,1],bnd[1,1]+1):
@@ -285,8 +287,7 @@ def digitize(xy):
 
     ipoints=points[mask]
 
-    f=list(set([tuple(ii) for ii in ipoints]))
-
-    f.extend(pixels)
-    f=list(set(f))
+    f=set([tuple(ii) for ii in ipoints])
+    f.update(pixels)
+    
     return f
