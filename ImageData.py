@@ -31,10 +31,14 @@ class SimImage:
         for tomega in range(NumOmega):
             tmpOmega=[]
             for tdet in range(NumDet):
-                tmpOmega.append(set())
+                tmpOmega.append([])
             self.images.append(tmpOmega)
     def AddHit(self,pixels,omega,det):
-        self.images[omega][det].update(pixels)
+        self.images[omega][det].extend(pixels)
+    def MakeSet(self):
+        for tomega in range(self.NumOmega):
+            for tdet in range(self.NumDet):
+                self.images[tomega][tdet]=set( self.images[tomega][tdet])
     def IsBright(self,omega,L,J,K):
         if tuple((J,K)) in self.images[omega][L]:
             return True
