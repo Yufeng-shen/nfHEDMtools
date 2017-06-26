@@ -88,16 +88,16 @@ def quaternion_from_matrix(matrix, isprecise=False):
 
 def Q2Mat(q0,q1,q2,q3):
     """
-    convert quarternion to active matrix
+    convert active quarternion to active matrix
     """
     m=np.matrix([[1-2*q2**2-2*q3**2,2*q1*q2+2*q0*q3,2*q1*q3-2*q0*q2],
         [2*q1*q2-2*q0*q3,1-2*q1**2-2*q3**2,2*q2*q3+2*q0*q1],
         [2*q1*q3+2*q0*q2,2*q2*q3-2*q0*q1,1-2*q1**2-2*q2**2]])
-    return m.T
+    return m
 
 def Euler2Mat(e):
     """
-    Euler Angle (radian)  in ZYZ convention to active rotation matrix, which means newV=M*oldV
+    Active Euler Angle (radian)  in ZYZ convention to active rotation matrix, which means newV=M*oldV
     """
     x=e[0]
     y=e[1]
@@ -115,7 +115,7 @@ def Euler2Mat(e):
 
 def EulerZXZ2Mat(e):
     """
-    Euler Angle (radian)  in ZXZ convention to active rotation matrix, which means newV=M*oldV
+    Active Euler Angle (radian)  in ZXZ convention to active rotation matrix, which means newV=M*oldV
     """
     x=e[0]
     y=e[1]
