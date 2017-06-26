@@ -12,6 +12,8 @@ from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as Navigatio
 from matplotlib.figure import Figure
 
 import RotRep as R
+from config_Qt import label as labelcfg
+from config_Qt import zgap as zgapcfg
 
 class WorkingWindow(QMainWindow):
     def __init__(self, _mainwindow, parent=None):
@@ -24,7 +26,7 @@ class WorkingWindow(QMainWindow):
         self.create_main_frame()
         self.create_status_bar()
         self.scattersets=[]
-        self.s1hat=((self.mainwindow.s1[self.mainwindow.backnomatched])/3).astype(int)
+        self.s1hat=((self.mainwindow.s1[self.mainwindow.backnomatched])/zgapcfg).astype(int)
         self.lastgraineuler=[0,0,0]
         self.labelpoints=[]
         self.s0labelID=[]
@@ -61,15 +63,31 @@ class WorkingWindow(QMainWindow):
        
     def draw_scatter_trial(self):
         if len(self.scattersets)!=0:
-            self.scattersets[0].remove()
+            while len(self.scattersets)>0:
+                self.scattersets[-1].remove()
+                self.scattersets.pop()
             self.canvas.draw()
-            self.scattersets=[]
             return
         mask=np.where(self.s1hat[:,2]==self.idx1)
         candidate=self.s1hat[mask]
         self.axes1.autoscale(False)
         self.scattersets.append(self.axes1.scatter(candidate[:,0],candidate[:,1]))
         self.canvas.draw()
+
+    def enterID0(self):
+        tmpid=int(self.chooseID0.text())
+        tmpshat=(self.mainwindow.s0[tmpid]/zgapcfg).astype(int)
+        self.axes0.autoscale(False)
+        self.scattersets.append(self.axes0.scatter(tmpshat[0],tmpshat[1]))
+        self.sp0.setValue(tmpshat[2])
+        self.on_draw()
+    def enterID1(self):
+        tmpid=int(self.chooseID1.text())
+        tmpshat=(self.mainwindow.s1[tmpid]/zgapcfg).astype(int)
+        self.axes1.autoscale(False)
+        self.scattersets.append(self.axes1.scatter(tmpshat[0],tmpshat[1]))
+        self.sp1.setValue(tmpshat[2])
+        self.on_draw()
 
     def clean_label_points(self):
         self.s0labelID=[]
@@ -114,8 +132,9 @@ class WorkingWindow(QMainWindow):
             y=int(round(event.ydata))
             tmpid=self.mainwindow.ID1[self.idx1][y,x,0]
             tmpci=self.mainwindow.ci1[self.idx1][y,x,0]
-            corid=self.mainwindow.backcorID[tmpid]
-            self.l1.setText("S1_ID= {:}, CI= {:} (->  S0_ID= {:})".format(tmpid,tmpci,corid))
+#            corid=self.mainwindow.backcorID[tmpid]
+            self.l1.setText("S1_ID= {:}, CI= {:} ".format(tmpid,tmpci))
+#            self.l1.setText("S1_ID= {:}, CI= {:} (->  S0_ID= {:})".format(tmpid,tmpci,corid))
 #            tmpe=self.mainwindow.e1[tmpid-1]
             tmpe=self.mainwindow.ce1[self.idx1][y,x]
 #            print tmpe
@@ -131,11 +150,13 @@ class WorkingWindow(QMainWindow):
         tmpstr=unicode(self.setlabel.currentText())
         if tmpstr=='choose label':
             return
+        if tmpstr=='customize':
+            tmpstr=str(self.customizelabel.text())
         if tmpstr not in self.labelres:
             self.labelres[tmpstr]=[(self.s0labelID,self.s1labelID)]
         else:
             self.labelres[tmpstr].append((self.s0labelID,self.s1labelID))
-        pickle.dump(self.labelres,open('GrainMatch_Qt_res.pickle','wb'))
+        pickle.dump(self.labelres,open(labelcfg['outputfilename'],'wb'))
         return
 
     def create_main_frame(self):
@@ -180,6 +201,17 @@ class WorkingWindow(QMainWindow):
         self.plus_button = QPushButton("& ->")
         self.connect(self.plus_button, SIGNAL('clicked()'),lambda: self.change_idxs(+1))
 
+        self.chooseID0=QLineEdit()
+        self.chooseID0.setValidator(QIntValidator(1,len(self.mainwindow.s0)-1))
+        self.connect(self.chooseID0,SIGNAL('returnPressed()'),self.enterID0)
+        self.chooseID1=QLineEdit()
+        self.chooseID1.setValidator(QIntValidator(1,len(self.mainwindow.s1)-1))
+        self.connect(self.chooseID1,SIGNAL('returnPressed()'),self.enterID1)
+        flo0 = QFormLayout()
+        flo0.addRow("S0 grain ID =",self.chooseID0)
+        flo1 = QFormLayout()
+        flo1.addRow("S1 grain ID =",self.chooseID1)
+
 
         self.draw_button = QPushButton("unmatched grains on/off")
         self.connect(self.draw_button, SIGNAL('clicked()'),self.draw_scatter_trial)
@@ -202,19 +234,26 @@ class WorkingWindow(QMainWindow):
         self.clean_button = QPushButton("clean labeled grain")
         self.connect(self.clean_button, SIGNAL('clicked()'),self.clean_label_points)
         self.setlabel=QComboBox()
-        self.setlabel.addItems(["choose label","low confidence","match","mis-reconstructed","new grain","disappeared grain"])
+        tmp=["choose label","customize"]
+        tmp.extend(labelcfg['labels'])
+        self.setlabel.addItems(tmp)
+        self.customizelabel=QLineEdit()
+        self.customizelabel.setText("input customized label here")
         self.save_button = QPushButton("save labeled grain")
         self.connect(self.save_button, SIGNAL('clicked()'),self.save_label_points)
 
         grid = QGridLayout()
         grid.addWidget(self.l0,0,0,1,2)
         grid.addWidget(self.l1,0,2,1,2)
-        grid.addWidget(self.l3,1,0,1,1)
+        grid.addWidget(self.l3,1,0,2,1)
         grid.addWidget(self.clean_button,1,1,1,1)
         grid.addWidget(self.setlabel,1,2,1,1)
         grid.addWidget(self.save_button,1,3,1,1)
+        grid.addWidget(self.customizelabel,2,1,1,3)
+        grid.addLayout(flo0,3,0,1,2)
+        grid.addLayout(flo1,3,2,1,2)
 #        hbox3.addWidget(self.setlabel)
-
+        
 
         vbox = QVBoxLayout()
         vbox.addLayout(hbox)

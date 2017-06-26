@@ -12,6 +12,7 @@ from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as Navigatio
 from matplotlib.figure import Figure
 
 from GrainMatch_Qt import WorkingWindow
+from config_Qt import Dream3d0,Dream3d1,interestidfname
 
 class AppForm(QMainWindow):
     def __init__(self, parent=None):
@@ -23,32 +24,38 @@ class AppForm(QMainWindow):
         self.create_status_bar()
 
     def load_default(self):
-        self.a0 = h5py.File('/home/fyshen13/Downloads/AngFiles_Anneal0_Output/Segment_15_2deg_27.dream3d')
-        self.ID0=self.a0['DataContainers']['ImageDataContainer']['CellData']['FeatureIds']
-        self.IPF0=self.a0['DataContainers']['ImageDataContainer']['CellData']['IPFColor']
-        self.Mask0=self.a0['DataContainers']['ImageDataContainer']['CellData']['Mask']
-        self.ce0=self.a0['DataContainers']['ImageDataContainer']['CellData']['EulerAngles']
-        self.ci0=self.a0['DataContainers']['ImageDataContainer']['CellData']['Confidence Index']
+        self.a0 = h5py.File(Dream3d0['path'])
+        self.ID0=self.a0['DataContainers']['ImageDataContainer']['CellData'][Dream3d0['ID']]
+        self.IPF0=self.a0['DataContainers']['ImageDataContainer']['CellData'][Dream3d0['IPF']]
+        self.Mask0=self.a0['DataContainers']['ImageDataContainer']['CellData'][Dream3d0['Mask']]
+        self.ce0=self.a0['DataContainers']['ImageDataContainer']['CellData'][Dream3d0['Euler']]
+        self.ci0=self.a0['DataContainers']['ImageDataContainer']['CellData'][Dream3d0['Confidence']]
+	self.s0=np.array(self.a0['DataContainers']['ImageDataContainer']['CellFeatureData'][Dream3d0['Centroids']])
+#	self.e0=self.a0['DataContainers']['ImageDataContainer']['CellFeatureData'][Dream3d0['AvgEuler']]
 
-        self.a1 = h5py.File('/home/fyshen13/Downloads/AngFiles_Anneal1_Output/Segment_match_2deg_27.dream3d')
-        self.ID1=self.a1['DataContainers']['ImageDataContainer']['CellData']['FeatureIds']
-        self.IPF1=self.a1['DataContainers']['ImageDataContainer']['CellData']['IPFColor']
-        self.Mask1=self.a1['DataContainers']['ImageDataContainer']['CellData']['Mask']
-        self.ce1=self.a1['DataContainers']['ImageDataContainer']['CellData']['EulerAngles']
-        self.ci1=self.a1['DataContainers']['ImageDataContainer']['CellData']['Confidence Index']
+        self.a1 = h5py.File(Dream3d1['path'])
+        self.ID1=self.a1['DataContainers']['ImageDataContainer']['CellData'][Dream3d1['ID']]
+        self.IPF1=self.a1['DataContainers']['ImageDataContainer']['CellData'][Dream3d1['IPF']]
+        self.Mask1=self.a1['DataContainers']['ImageDataContainer']['CellData'][Dream3d1['Mask']]
+        self.ce1=self.a1['DataContainers']['ImageDataContainer']['CellData'][Dream3d1['Euler']]
+        self.ci1=self.a1['DataContainers']['ImageDataContainer']['CellData'][Dream3d1['Confidence']]
+	self.s1=np.array(self.a1['DataContainers']['ImageDataContainer']['CellFeatureData'][Dream3d1['Centroids']])
+#	self.e1=self.a0['DataContainers']['ImageDataContainer']['CellFeatureData'][Dream3d1['AvgEuler']]
 
-        self.s0=np.loadtxt('/home/fyshen13/Downloads/AngFiles_Anneal0_Output/centroids._2deg_27.txt')[1:]
-        self.s1=np.loadtxt('/home/fyshen13/Downloads/AngFiles_Anneal1_Output/centroids._2deg_27.txt')[1:]
+#        self.s0=np.loadtxt('/home/fyshen13/Downloads/AngFiles_Anneal0_Output/centroids._2deg_27.txt')[1:]
+#        self.s1=np.loadtxt('/home/fyshen13/Downloads/AngFiles_Anneal1_Output/centroids._2deg_27.txt')[1:]
 
-        self.e0=np.loadtxt('/home/fyshen13/Downloads/AngFiles_Anneal0_Output/AvgEulerAngles._2deg_27.txt')[1:]
-        self.e1=np.loadtxt('/home/fyshen13/Downloads/AngFiles_Anneal1_Output/AvgEulerAngles._2deg_27.txt')[1:]
+#        self.e0=np.loadtxt('/home/fyshen13/Downloads/AngFiles_Anneal0_Output/AvgEulerAngles._2deg_27.txt')[1:]
+#        self.e1=np.loadtxt('/home/fyshen13/Downloads/AngFiles_Anneal1_Output/AvgEulerAngles._2deg_27.txt')[1:]
 
-        self.backnomatched=pickle.load(open('/home/fyshen13/Fe/matchID/2deg27/nomatchgrain_backward.pickle','r'))
-        self.v1=np.loadtxt('/home/fyshen13/Downloads/AngFiles_Anneal1_Output/Volumes._2deg_27.txt')[1:]
-        idx1=np.argsort(self.v1)
-        idx1=np.flipud(idx1)
-        self.backnomatched=idx1[self.backnomatched]
-        self.backcorID=np.loadtxt('/home/fyshen13/Fe/matchID/2deg27/corFeatureIDs_backward.txt').astype(int)
+#        self.backnomatched=pickle.load(open('/home/fyshen13/Fe/matchID/2deg27/bulkhcnomatch_backward.pickle','r'))
+        #self.backnomatched=pickle.load(open('/home/fyshen13/Fe/matchID/2deg27/nomatchgrain_backward.pickle','r'))
+#        self.v1=np.loadtxt('/home/fyshen13/Downloads/AngFiles_Anneal1_Output/Volumes._2deg_27.txt')[1:]
+#        idx1=np.argsort(self.v1)
+#        idx1=np.flipud(idx1)
+#        self.backnomatched=idx1[self.backnomatched]
+	self.backnomatched=np.loadtxt(interestidfname).astype(int)
+#        self.backcorID=np.loadtxt('/home/fyshen13/Fe/matchID/2deg27/corFeatureIDs_backward.txt').astype(int)
 
         self.workingwindow=WorkingWindow(_mainwindow=self)
         self.workingwindow.show()
@@ -57,14 +64,26 @@ class AppForm(QMainWindow):
         filename0 = unicode(QFileDialog.getOpenFileName(self,
                 'Load state 0 file','',file_choices))
         self.a0 = h5py.File(filename0)
-        self.ID0=self.a0['DataContainers']['ImageDataContainer']['CellData']['FeatureIds']
-        self.IPF0=self.a0['DataContainers']['ImageDataContainer']['CellData']['IPFColor']
+        self.ID0=self.a0['DataContainers']['ImageDataContainer']['CellData'][Dream3d0['ID']]
+        self.IPF0=self.a0['DataContainers']['ImageDataContainer']['CellData'][Dream3d0['IPF']]
+        self.Mask0=self.a0['DataContainers']['ImageDataContainer']['CellData'][Dream3d0['Mask']]
+        self.ce0=self.a0['DataContainers']['ImageDataContainer']['CellData'][Dream3d0['Euler']]
+        self.ci0=self.a0['DataContainers']['ImageDataContainer']['CellData'][Dream3d0['Confidence']]
+	self.s0=np.array(self.a0['DataContainers']['ImageDataContainer']['CellFeatureData'][Dream3d0['Centroids']])
         filename1 = unicode(QFileDialog.getOpenFileName(self,
                 'Load state 1 file','',file_choices))
         self.a1 = h5py.File(filename1)
-        self.ID1=self.a1['DataContainers']['ImageDataContainer']['CellData']['FeatureIds']
-        self.IPF1=self.a1['DataContainers']['ImageDataContainer']['CellData']['IPFColor']
+        self.ID1=self.a1['DataContainers']['ImageDataContainer']['CellData'][Dream3d1['ID']]
+        self.IPF1=self.a1['DataContainers']['ImageDataContainer']['CellData'][Dream3d1['IPF']]
+        self.Mask1=self.a1['DataContainers']['ImageDataContainer']['CellData'][Dream3d1['Mask']]
+        self.ce1=self.a1['DataContainers']['ImageDataContainer']['CellData'][Dream3d1['Euler']]
+        self.ci1=self.a1['DataContainers']['ImageDataContainer']['CellData'][Dream3d1['Confidence']]
+	self.s1=np.array(self.a1['DataContainers']['ImageDataContainer']['CellFeatureData'][Dream3d1['Centroids']])
         
+        filename3 = unicode(QFileDialog.getOpenFileName(self,
+                'Load grain ID file','',"TXT (*.txt)"))
+        self.backnomatched=np.loadtxt(filename3).astype(int)
+
         self.workingwindow=WorkingWindow(_mainwindow=self)
         self.workingwindow.show()
 
