@@ -31,11 +31,11 @@ def frankie_angles_from_g( g ,verbo=True, **exp ):
     cos_chi = ghat[2]; 
     sin_chi = np.sqrt( 1 - cos_chi**2 );
     omega_0 = np.arctan2( ghat[0] , ghat[1] );
-    phi = np.arccos( sin_theta / sin_chi) ;
-    sin_phi = np.sin( phi );
-    eta = np.arcsin( sin_chi*sin_phi/ cos_theta );
     
     if np.fabs( sin_theta ) <= np.fabs( sin_chi ):
+        phi = np.arccos( sin_theta / sin_chi) ;
+        sin_phi = np.sin( phi );
+        eta = np.arcsin( sin_chi*sin_phi/ cos_theta );
         delta_omega = np.arctan2( ghat[0] , ghat[1] );
         delta_omega_b1 = np.arcsin( sin_theta / sin_chi );
         delta_omega_b2 = np.pi - delta_omega_b1; 
@@ -50,8 +50,7 @@ def frankie_angles_from_g( g ,verbo=True, **exp ):
         if omega_res2 < -np.pi:
             omega_res2 += 2*np.pi;
     else:
-        omega_res1 = 720;
-        omega_res2 = 720;
+        return -1
     if verbo==True:
         print '2theta: ',2*np.arcsin(sin_theta)*180/np.pi
         print 'chi: ',np.arccos(cos_chi)*180/np.pi
@@ -210,7 +209,9 @@ def GetProjectedVertex(Det1,sample,orien,etalimit,grainpos,getPeaksInfo=False,bI
     rotatedG=orien.dot(sample.Gs.T).T
     for g1 in rotatedG:
         res=frankie_angles_from_g(g1,verbo=False,**exp)
-        if res['chi']>=90:
+        if res==-1:
+            pass
+        elif res['chi']>=90:
             pass
         elif res['eta']>etalimit:
             pass
