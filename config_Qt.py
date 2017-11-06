@@ -1,6 +1,6 @@
 
 #file path and attribute names of first state
-Dream3d0 = {'path':'/home/fyshen13/Downloads/AngFiles_Anneal0_Output/Segment_15_2deg_27.dream3d',
+Dream3d0 = {'path':'/home/yufengs/Downloads/An1new6.dream3d',
         'ID':'FeatureIds',
         'IPF':'IPFColor',
         'Mask':'Mask',
@@ -10,7 +10,7 @@ Dream3d0 = {'path':'/home/fyshen13/Downloads/AngFiles_Anneal0_Output/Segment_15_
         'Confidence':'Confidence Index'}
 
 #file path and attribute names of second state
-Dream3d1 = {'path':'/home/fyshen13/Downloads/AngFiles_Anneal1_Output/Segment_match_2deg_27.dream3d',
+Dream3d1 = {'path':'/home/yufengs/Downloads/An2newmesh6.dream3d',
         'ID':'FeatureIds',
         'IPF':'IPFColor',
         'Mask':'Mask',
@@ -27,4 +27,4 @@ label = {'outputfilename':'GrainMatch_Qt_res.pickle',
         'labels':["low confidence","match","mis-reconstructed","new grain"]}
 
 #zgap is the distance (in um) between layers
-zgap = 3
+zgap = 4

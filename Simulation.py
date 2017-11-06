@@ -137,8 +137,8 @@ class CrystalStr:
             self.PrimA=2.92539*np.array([1,0,0])
             self.PrimB=2.92539*np.array([np.cos(np.pi*2/3),np.sin(np.pi*2/3),0])
             self.PrimC=4.67399*np.array([0,0,1])
-            self.addAtom([1/3.0,2/3.0,1/4.0],40)
-            self.addAtom([2/3.0,1/3.0,3/4.0],40)
+            self.addAtom([1/3.0,2/3.0,1/4.0],22)
+            self.addAtom([2/3.0,1/3.0,3/4.0],22)
         else:
             pass
     def setPrim(self,x,y,z):
@@ -176,7 +176,7 @@ class CrystalStr:
 
 
 
-def GetProjectedVertex(Det1,sample,orien,etalimit,grainpos,getPeaksInfo=False,bIdx=True,**exp):
+def GetProjectedVertex(Det1,sample,orien,etalimit,grainpos,getPeaksInfo=False,bIdx=True,omegaL=-90,omegaU=90,**exp):
     """
     Get the observable projected vertex on a single detector and their G vectors.
     Caution!!! This function only works for traditional nf-HEDM experiment setup.
@@ -216,7 +216,7 @@ def GetProjectedVertex(Det1,sample,orien,etalimit,grainpos,getPeaksInfo=False,bI
         elif res['eta']>etalimit:
             pass
         else:
-            if -90<=res['omega_a']<=90:
+            if omegaL<=res['omega_a']<=omegaU:
                 omega=res['omega_a']/180.0*np.pi
                 newgrainx=np.cos(omega)*grainpos[0]-np.sin(omega)*grainpos[1]
                 newgrainy=np.cos(omega)*grainpos[1]+np.sin(omega)*grainpos[0]
@@ -227,7 +227,7 @@ def GetProjectedVertex(Det1,sample,orien,etalimit,grainpos,getPeaksInfo=False,bI
                     if getPeaksInfo:
                         PeaksInfo.append({'WhichOmega':'a','chi':res['chi'],'omega_0':res['omega_0'],
                             '2Theta':res['2Theta'],'eta':res['eta']})
-            if -90<=res['omega_b']<=90:
+            if omegaL<=res['omega_b']<=omegaU:
                 omega=res['omega_b']/180.0*np.pi
                 newgrainx=np.cos(omega)*grainpos[0]-np.sin(omega)*grainpos[1]
                 newgrainy=np.cos(omega)*grainpos[1]+np.sin(omega)*grainpos[0]
