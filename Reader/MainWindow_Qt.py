@@ -10,7 +10,7 @@ from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 
-import simpleclient_copy as C
+import simpleclient as C
 import RotRep as R
 import Simulation as G
 
@@ -22,8 +22,8 @@ class AppForm(QMainWindow):
 
         self.bfirstdraw=True
         self.photo=[None]*3
-        self.vmin=25
-        self.vmax=50
+        self.vmin=15
+        self.vmax=40
         self.omegaoffset=-1
         self.scatterarts=[]
 
@@ -39,11 +39,11 @@ class AppForm(QMainWindow):
         self.load_default()
 
     def load_default(self):
-        self.params=np.array([71.676,81,0,0.0974279,0,
-            89.5003, 80.7666, 266.397,
-            935.166,1998.96,
-            4.72573,0,0,
-            90.6659, 89.4069,359.073])
+        self.params=np.array([51.9957,81,3.7998e-7,-0.204599,0,
+            328.93, 88.8624, 11.7176,
+            1182.19,2026.27,
+            7.14503,0,0,
+            89.1588, 87.5647,0.278594])
         energy=self.params[0]
         etalimit=self.params[1]/180.0*np.pi
         pos=self.params[2:5]
@@ -160,9 +160,9 @@ class AppForm(QMainWindow):
             self.l0.setText('Omega ID range: {0:d} ~ {1:d}'.format(*self.res[tmpid]))
         else:
             self.l0.setText('Omega ID range: not choose yet')
-        self.omegid=int((self._xrd.Peaks[tmpid,2]+90)*4)
-        xran=100
-        yran=50
+        self.omegid=int((180-self._xrd.Peaks[tmpid,2])*20)
+        xran=200
+        yran=100
         self.x1=max(0,int(2047-self._xrd.Peaks[tmpid,0]-xran))
         self.x2=min(self.x1+xran*2,2047)
         self.y1=max(0,int(self._xrd.Peaks[tmpid,1]-yran))

@@ -34,7 +34,7 @@ class XRD(object):
     def __init__(self):
         self._sample=G.CrystalStr('Ti7')
         self._sample.getRecipVec()
-        self._sample.getGs(10)
+        self._sample.getGs(11)
         self._Peaks=None
         self._Gs=None
         self._PeaksInfo=None
@@ -49,7 +49,7 @@ class XRD(object):
         self._orien=orien
     def Simulate(self):
         self._Peaks,self._Gs,self._PeaksInfo = G.GetProjectedVertex(self._Det,self._sample,
-                self._orien,self._etalimit,self._pos,getPeaksInfo=True,**self._exp)
+                self._orien,self._etalimit,self._pos,getPeaksInfo=True,omegaL=0,omegaU=180,**self._exp)
     @property
     def Peaks(self):
         return self._Peaks

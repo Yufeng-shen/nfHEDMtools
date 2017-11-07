@@ -6,7 +6,7 @@ import struct
 import matplotlib.pyplot as plt
 
 def RawImgFile(omgid):
-    return '/home/fyshen13/Mar17Raw/Ti7_S0_{0:06d}.tif'.format(omgid+26496)
+    return '/mnt/xoco/home/Ti7_WithHRM_Under2ndLoad/Ti7_WithHRM_Under2ndLoad__{0:06d}.tif'.format(omgid)
 
 class myProtocol(object):
     @classmethod
