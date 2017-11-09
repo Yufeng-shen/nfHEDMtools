@@ -23,6 +23,8 @@ class WorkingWindow(QMainWindow):
         self.bfirstdraw=True
         self.setWindowTitle('Working Window')
         self.mainwindow=_mainwindow
+        self.mymask0=self.mainwindow.Mask0[:,:,:,0].astype('bool')
+        self.mymask1=self.mainwindow.Mask1[:,:,:,0].astype('bool')
         self.create_main_frame()
         self.create_status_bar()
         self.scattersets=[]
@@ -45,8 +47,8 @@ class WorkingWindow(QMainWindow):
         self.idx1=self.sp1.value()
         alpha=self.mainwindow.slider.value()/100.0
 
-        tmp0=self.mainwindow.Mask0[self.idx0][:,:,0]
-        tmp1=self.mainwindow.Mask1[self.idx1][:,:,0]
+        tmp0=self.mymask0[self.idx0]
+        tmp1=self.mymask1[self.idx1]
         tmp0=np.stack((tmp0,tmp0,tmp0),axis=-1)
         tmp1=np.stack((tmp1,tmp1,tmp1),axis=-1)
 
@@ -157,7 +159,19 @@ class WorkingWindow(QMainWindow):
         else:
             self.labelres[tmpstr].append((self.s0labelID,self.s1labelID))
         pickle.dump(self.labelres,open(labelcfg['outputfilename'],'wb'))
+        for tid0 in self.s0labelID:
+            self.mymask0[self.mainwindow.ID0[:,:,:,0]==tid0]=0
+        for tid1 in self.s1labelID:
+            self.mymask1[self.mainwindow.ID1[:,:,:,0]==tid1]=0
+        self.clean_label_points()
+        self.on_draw()
         return
+
+#    def keyPressEvent(self,event):
+#        key = event.key()
+#        if key== Qt.Key_Down:
+#            print('haha')
+#        return
 
     def create_main_frame(self):
 
