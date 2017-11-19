@@ -63,15 +63,15 @@ def frankie_angles_from_g( g ,verbo=True, **exp ):
 	'omega_a':omega_res1*180/np.pi,'omega_b':omega_res2*180/np.pi,'omega_0':omega_0*180/np.pi}
 
 class Detector:
-    def __init__(self):
+    def __init__(self,psize=0.00148,pn=2048):
         self.__Norm=np.array([0,0,1])
         self.__CoordOrigin=np.array([0.,0.,0.])
         self.__Jvector=np.array([1,0,0])
         self.__Kvector=np.array([0,-1,0])
-        self.__PixelJ=0.00148
-        self.__PixelK=0.00148
-        self.__NPixelJ=2048
-        self.__NPixelK=2048
+        self.__PixelJ=psize
+        self.__PixelK=psize
+        self.__NPixelJ=pn
+        self.__NPixelK=pn
     def Move(self,J,K,trans,tilt):
         self.__CoordOrigin-=J*self.__Jvector*self.__PixelJ+K*self.__Kvector*self.__PixelK
         self.__CoordOrigin=tilt.dot(self.__CoordOrigin)+trans
