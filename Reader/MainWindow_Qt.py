@@ -14,6 +14,12 @@ import simpleclient as C
 import RotRep as R
 import Simulation as G
 
+def my_mouse_data(data):
+    return 'lol'
+
+def my_coord_format(x,y):
+    return 'hahahaha'
+
 class AppForm(QMainWindow):
     def __init__(self, parent=None):
         QMainWindow.__init__(self, parent)
@@ -126,6 +132,8 @@ class AppForm(QMainWindow):
                     vmin=self.vmin,
                     vmax=self.vmax,
                     interpolation='nearest'))
+                self.imobjs[ii].format_cursor_data=my_mouse_data
+                self._axes[ii].format_coord=my_coord_format
             self.bfirstdraw=False
         else:
             for ii in range(3):
