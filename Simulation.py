@@ -159,6 +159,7 @@ class CrystalStr:
         return F
     def getGs(self,maxQ):
         self.Gs=[]
+        self.hkls=[]
         maxh=int(maxQ/float(np.linalg.norm(self.RecipA)))
         maxk=int(maxQ/float(np.linalg.norm(self.RecipB)))
         maxl=int(maxQ/float(np.linalg.norm(self.RecipC)))
@@ -172,7 +173,9 @@ class CrystalStr:
                         if np.linalg.norm(G)<=maxQ:
                             if np.absolute(self.calStructFactor(np.array([h,k,l])))>1e-6:
                                 self.Gs.append(G)
-	self.Gs=np.array(self.Gs)
+                                self.hkls.append(np.array([h,k,l]))
+        self.Gs=np.array(self.Gs)
+        self.hkls=np.array(self.hkls)
 
 
 
@@ -207,7 +210,8 @@ def GetProjectedVertex(Det1,sample,orien,etalimit,grainpos,getPeaksInfo=False,bI
     Gs=[]
     PeaksInfo=[]
     rotatedG=orien.dot(sample.Gs.T).T
-    for g1 in rotatedG:
+    for ii in range(len(rotatedG)):
+        g1=rotatedG[ii]
         res=frankie_angles_from_g(g1,verbo=False,**exp)
         if res==-1:
             pass
@@ -226,7 +230,7 @@ def GetProjectedVertex(Det1,sample,orien,etalimit,grainpos,getPeaksInfo=False,bI
                     Gs.append(g1)
                     if getPeaksInfo:
                         PeaksInfo.append({'WhichOmega':'a','chi':res['chi'],'omega_0':res['omega_0'],
-                            '2Theta':res['2Theta'],'eta':res['eta']})
+                            '2Theta':res['2Theta'],'eta':res['eta'],'hkl':sample.hkls[ii]})
             if omegaL<=res['omega_b']<=omegaU:
                 omega=res['omega_b']/180.0*np.pi
                 newgrainx=np.cos(omega)*grainpos[0]-np.sin(omega)*grainpos[1]
@@ -237,7 +241,7 @@ def GetProjectedVertex(Det1,sample,orien,etalimit,grainpos,getPeaksInfo=False,bI
                     Gs.append(g1)
                     if getPeaksInfo:
                         PeaksInfo.append({'WhichOmega':'b','chi':res['chi'],'omega_0':res['omega_0'],
-                            '2Theta':res['2Theta'],'eta':-res['eta']})
+                            '2Theta':res['2Theta'],'eta':-res['eta'],'hkl':sample.hkls[ii]})
     Peaks=np.array(Peaks)
     Gs=np.array(Gs)
     if getPeaksInfo:
