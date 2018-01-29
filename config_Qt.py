@@ -1,6 +1,6 @@
 
 #file path and attribute names of first state
-Dream3d0 = {'path':'/home/yufengs/Downloads/An1new6.dream3d',
+Dream3d0 = {'path':'/home/fyshen13/Downloads/An1new6.dream3d',
         'ID':'FeatureIds',
         'IPF':'IPFColor',
         'Mask':'Mask',
@@ -10,7 +10,7 @@ Dream3d0 = {'path':'/home/yufengs/Downloads/An1new6.dream3d',
         'Confidence':'Confidence Index'}
 
 #file path and attribute names of second state
-Dream3d1 = {'path':'/home/yufengs/Downloads/An2newmesh6.dream3d',
+Dream3d1 = {'path':'/home/fyshen13/Downloads/An2new6.dream3d',
         'ID':'FeatureIds',
         'IPF':'IPFColor',
         'Mask':'Mask',
@@ -28,3 +28,4 @@ label = {'outputfilename':'GrainMatch_Qt_res.pickle',
 
 #zgap is the distance (in um) between layers
 zgap = 4
+xygrid=2.8125

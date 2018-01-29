@@ -14,6 +14,7 @@ from matplotlib.figure import Figure
 import RotRep as R
 from config_Qt import label as labelcfg
 from config_Qt import zgap as zgapcfg
+from config_Qt import xygrid as xycfg
 
 class WorkingWindow(QMainWindow):
     def __init__(self, _mainwindow, parent=None):
@@ -28,7 +29,7 @@ class WorkingWindow(QMainWindow):
         self.create_main_frame()
         self.create_status_bar()
         self.scattersets=[]
-        self.s1hat=((self.mainwindow.s1[self.mainwindow.backnomatched])/zgapcfg).astype(int)
+        self.s1hat=((self.mainwindow.s1[self.mainwindow.backnomatched])/np.array([xycfg,xycfg,zgapcfg])).astype(int)
         self.lastgraineuler=[0,0,0]
         self.labelpoints=[]
         self.s0labelID=[]
@@ -78,14 +79,14 @@ class WorkingWindow(QMainWindow):
 
     def enterID0(self):
         tmpid=int(self.chooseID0.text())
-        tmpshat=(self.mainwindow.s0[tmpid]/zgapcfg).astype(int)
+        tmpshat=(self.mainwindow.s0[tmpid]/np.array([xycfg,xycfg,zgapcfg])).astype(int)
         self.axes0.autoscale(False)
         self.scattersets.append(self.axes0.scatter(tmpshat[0],tmpshat[1]))
         self.sp0.setValue(tmpshat[2])
         self.on_draw()
     def enterID1(self):
         tmpid=int(self.chooseID1.text())
-        tmpshat=(self.mainwindow.s1[tmpid]/zgapcfg).astype(int)
+        tmpshat=(self.mainwindow.s1[tmpid]/np.array([xycfg,xycfg,zgapcfg])).astype(int)
         self.axes1.autoscale(False)
         self.scattersets.append(self.axes1.scatter(tmpshat[0],tmpshat[1]))
         self.sp1.setValue(tmpshat[2])
