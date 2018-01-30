@@ -91,6 +91,22 @@ class Detector:
                 return J,K
         else:
             return -1
+    def IntersectionIdxs(self,ScatterSrcs,TwoThetas,etas,bIdx=True):
+        ScatterSrcs=ScatterSrcs.reshape((3,-1))
+        TwoThetas=TwoThetas.ravel()
+        etas=etas.ravel()
+        dists=self.__Norm.dot(self.__CoordOrigin.reshape((3,1))-ScatterSrcs)
+        scatterdirs=np.array([np.cos(TwoThetas),np.sin(TwoThetas)*np.sin(etas),np.sin(TwoThetas)*np.cos(etas)]).reshape((3,-1))
+        InterPoss=dists/(self.__Norm.dot(scatterdirs))*scatterdirs+ScatterSrcs
+        Js=(self.__Jvector.dot(InterPoss-self.__CoordOrigin.reshape((3,1)))/self.__PixelJ)
+        Ks=(self.__Kvector.dot(InterPoss-self.__CoordOrigin.reshape((3,1)))/self.__PixelK)
+        if bIdx==False:
+            raise 'Not Implemented'
+        else:
+            Js=Js.astype(int)
+            Ks=Ks.astype(int)
+            mask=(Js>=0)*(Js<self.__NPixelJ)*(Ks>=0)*(Ks<self.__NPixelK)
+            return Js,Ks,mask
     def BackProj(self,HitPos,omega,TwoTheta,eta):
         """
         HitPos: ndarray (3,)
