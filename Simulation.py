@@ -84,9 +84,9 @@ class Detector:
         InterPos=dist/(self.__Norm.dot(scatterdir))*scatterdir+ScatterSrc
         J=(self.__Jvector.dot(InterPos-self.__CoordOrigin)/self.__PixelJ)
         K=(self.__Kvector.dot(InterPos-self.__CoordOrigin)/self.__PixelK)
-        if 0 <= int(J) < self.__NPixelJ and 0 <= int(K) < self.__NPixelK:
+        if 0 <= np.floor(J) < self.__NPixelJ and 0 <= np.floor(K) < self.__NPixelK:
             if bIdx==True:
-                return int(J),int(K)
+                return np.floor(J),np.floor(K)
             else:
                 return J,K
         else:
@@ -103,8 +103,8 @@ class Detector:
         if bIdx==False:
             raise 'Not Implemented'
         else:
-            Js=Js.astype(int)
-            Ks=Ks.astype(int)
+            Js=np.floor(Js)
+            Ks=np.floor(Ks)
             mask=(Js>=0)*(Js<self.__NPixelJ)*(Ks>=0)*(Ks<self.__NPixelK)
             return Js,Ks,mask
     def BackProj(self,HitPos,omega,TwoTheta,eta):
