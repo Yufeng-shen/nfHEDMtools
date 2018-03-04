@@ -72,6 +72,18 @@ class Detector:
         self.__PixelK=psize
         self.__NPixelJ=pn
         self.__NPixelK=pn
+    @property
+    def Norm(self):
+        return self.__Norm.copy()
+    @property
+    def CoordOrigin(self):
+        return self.__CoordOrigin.copy()
+    @property
+    def Jvector(self):
+        return self.__Jvector.copy()
+    @property
+    def Kvector(self):
+        return self.__Kvector.copy()
     def Move(self,J,K,trans,tilt):
         self.__CoordOrigin-=J*self.__Jvector*self.__PixelJ+K*self.__Kvector*self.__PixelK
         self.__CoordOrigin=tilt.dot(self.__CoordOrigin)+trans
@@ -128,6 +140,10 @@ class Detector:
         print "CoordOrigin: ",self.__CoordOrigin
         print "J vector: ",self.__Jvector
         print "K vector: ",self.__Kvector
+        print "J pixel size: ",self.__PixelJ
+        print "K pixel size: ",self.__PixelK
+        print "J pixel number: ",self.__NPixelJ
+        print "K pixel number: ",self.__NPixelK
 
 class CrystalStr:
     def __init__(self,material='new'):
